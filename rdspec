@@ -1,0 +1,35 @@
+#!/bin/bash
+
+cmd=$(git diff --name-only --diff-filter=d)
+if [[ -z $cmd ]]; then
+  read -p  'No spec to run. Run all or specific spec?(y/n/spec_file) ' inp
+
+  case $inp in
+    [Yy]* ) rspec spec/;;
+    [Nn]* ) exit;;
+    * ) rspec $inp
+  esac
+fi
+
+spec_files=""
+while IFS= read -r -u 9 file; do
+  file="${file/#app/spec}"
+
+  if [[ $file == spec/* ]]; then
+    if [[ ${file: -8} == "_spec.rb" ]]; then
+      file=$file
+    else
+      file="${file%.*}_spec.rb" 
+    fi
+    
+    if [[ -f "$file" ]]; then
+      echo "$file"
+      spec_files="$spec_files $file"
+    fi
+  fi
+
+done 9< <(git diff --name-only --diff-filter=d)
+
+if ! [[ -z $spec_files ]]; then
+  rspec $spec_files
+fi
